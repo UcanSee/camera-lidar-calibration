@@ -6,11 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 img = []
-img.append(cv2.imread('./data/cam1.jpg'))
-img.append(cv2.imread('./data/cam2.jpg'))
-camera = Camera_Calibration(img, 0.08)  # 0.08m distance from one corner to next corner
+img.append(cv2.imread('./data/left_0202.jpg'))
+img.append(cv2.imread('./data/right_0202.jpg'))
+camera = Camera_Calibration(img, 0.07699375)  # 0.08m distance from one corner to next corner
+# camera = Camera_Calibration(img, 0.08)  # 0.08m distance from one corner to next corner
 camera.match_cali()
-print camera.intrinsic
-print camera.rotation
-print camera.translation
-
+print camera.boards_pts_set[0]

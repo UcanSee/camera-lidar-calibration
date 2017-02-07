@@ -62,7 +62,6 @@ class Camera_Calibration:
     def match_cali(self):
         self.match_pattern()
         self.camera_cali()
-        self.recover_points()
 
     # match checkerboards between cameras taking first img as reference
     def match_pattern(self):
@@ -162,25 +161,37 @@ class Camera_Calibration:
                     img_pts_ref.append(np.array(img_pts_board_ref).astype(np.float32))
                     obj_pts_tar.append(np.array(obj_pts_board_tar).astype(np.float32))
                     img_pts_tar.append(np.array(img_pts_board_tar).astype(np.float32))
-
+            '''
             # visualize the corners found on image
             for no_board in xrange(0, len(img_pts_ref)):
                 I_1 = self.img[0]
                 I_2 = self.img[1]
-                for i in xrange(0, len(img_pts_ref[no_board])):
+                for i in xrange(0, 20):
                     x = int(math.ceil(img_pts_ref[no_board][i, 0]))
                     y = int(math.ceil(img_pts_ref[no_board][i, 1]))
-                    I_1[y-3:y+3, x-3:x+3] = [0, 0, 255]
+                    I_1[y-2:y+2, x-2:x+2] = [0, 0, 255]
                 cv2.imshow('left', I_1)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-                for i in xrange(0, len(img_pts_tar[no_board])):
+                for i in xrange(0, 20):
                     x = int(math.ceil(img_pts_tar[no_board][i, 0]))
                     y = int(math.ceil(img_pts_tar[no_board][i, 1]))
-                    I_2[y-3:y+3, x-3:x+3] = [0, 0, 255]
+                    I_2[y-2:y+2, x-2:x+2] = [0, 0, 255]
                 cv2.imshow('right', I_2)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
+            '''
+
+            '''
+            # mono camera calibration
+            mono_ret, mono_mat_1, mono_dist_1, mono_r, mono_t = \
+                cv2.calibrateCamera(obj_pts_ref, img_pts_ref, (len(self.img[c][0]), len(self.img[c])),
+                                    flags=(cv2.CALIB_FIX_K3+cv2.CALIB_FIX_K4+cv2.CALIB_FIX_K5))
+
+            print "mono camera calibration result"
+            print mono_mat_1
+            print mono_dist_1
+            '''
 
             # stereo camera calibration
             ret, cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2, R, T, E, F = \
@@ -190,7 +201,7 @@ class Camera_Calibration:
                 cv2.stereoRectify(cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2,
                                   (len(self.img[c][0]), len(self.img[c])), R, T,
                                   None, None, None, None, None, flags=(cv2.CALIB_ZERO_DISPARITY),
-                                  alpha=0, newImageSize=(945, 702))
+                                  alpha=0, newImageSize=(1091, 547))
             self.intrinsic.append(cam_mat_1)
             self.intrinsic.append(cam_mat_2)
             self.distortion.append(cam_dist_1)
@@ -202,68 +213,37 @@ class Camera_Calibration:
             self.rect_rot.append(rect_rot_1)
             self.rect_rot.append(rect_rot_2)
 
-    # find 3d points by triangulation after camera calibration
-    def recover_points(self):
-        # first camera/image is the reference camera/image
-        boards_ref = self.boards[0].chessboards
-        corners_ref = self.corners[0].corners_pts
-        # only support two-camera triangulation for now
-        for c in xrange(1, len(self.boards)):
-            match = self.matching[2 * (c - 1)]
-            rot = self.matching[2 * (c - 1) + 1]
-            boards_tar = self.boards[c].chessboards
-            corners_tar = self.corners[c].corners_pts
-            for b in xrange(0, len(match)):
-                if match[b] != -1:
-                    # reference camera
-                    img_pts_board_ref = []
-                    board_ref = boards_ref[b]
+            for b in xrange(0, len(img_pts_ref)):
+                # TODO: update corner pixel coordinates to new rectified coordinate and
+                # use rectified projection matrix
+                cam_proj_1 = np.concatenate((self.intrinsic[0], np.zeros((3, 1))), axis=1)
+                cam_proj_2 = self.intrinsic[1].dot(np.concatenate((self.rotation[0], self.translation[0]), axis=1))
+                obj_pts_board = cv2.triangulatePoints(cam_proj_1, cam_proj_2,
+                                                      img_pts_ref[b].astype(np.float32).T,
+                                                      img_pts_tar[b].astype(np.float32).T)
+                obj_pts_board = obj_pts_board.T
+                obj_pts_board = obj_pts_board[:, 0: 3]/obj_pts_board[:, 3:]
+                self.boards_pts_set.append(obj_pts_board)
 
-                    for i in xrange(0, len(board_ref)):
-                        for j in xrange(0, len(board_ref[0])):
-                            img_pts_board_ref.append(corners_ref[board_ref[i, j]])
-
-                    # target camera
-                    img_pts_board_tar = []
-                    board_tar = boards_tar[int(match[b])]
-
-                    for k in xrange(0, int(rot[b])):
-                        board_tar = np.flipud(board_tar).T
-
-                    for i in xrange(0, len(board_tar)):
-                        for j in xrange(0, len(board_tar[0])):
-                            img_pts_board_tar.append(corners_tar[board_tar[i, j]])
-
-                    # TODO: update corner pixel coordinates to new rectified coordinate and
-                    # use rectified projection matrix
-                    cam_proj_1 = np.concatenate((self.intrinsic[0], np.zeros((3, 1))), axis=1)
-                    cam_proj_2 = self.intrinsic[1].dot(np.concatenate((self.rotation[0], self.translation[0]), axis=1))
-                    obj_pts_board = cv2.triangulatePoints(cam_proj_1, cam_proj_2,
-                                                          np.array(img_pts_board_ref).astype(np.float32).T,
-                                                          np.array(img_pts_board_tar).astype(np.float32).T)
-                    obj_pts_board = obj_pts_board.T
-                    obj_pts_board = obj_pts_board[:, 0:2]/obj_pts_board[:, 2:]
-                    self.boards_pts_set.append(obj_pts_board)
-
-            # visualize the corners found on image
-            '''
-            I_1 = self.img[0]
-            I_2 = self.img[1]
-            no_board = 10
-            for i in xrange(0, len(img_pts_ref[no_board])):
-                x = int(math.ceil(img_pts_ref[no_board][i, 0]))
-                y = int(math.ceil(img_pts_ref[no_board][i, 1]))
-                I_1[y-2:y+2, x-2:x+2] = [255, 0, 0]
-            cv2.imshow('left', I_1)
-            cv2.waitKey(0)
-            for i in xrange(0, len(img_pts_tar[no_board])):
-                x = int(math.ceil(img_pts_tar[no_board][i, 0]))
-                y = int(math.ceil(img_pts_tar[no_board][i, 1]))
-                I_2[y-2:y+2, x-2:x+2] = [255, 0, 0]
-            cv2.imshow('right', I_2)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
-            '''
+                # visualize the corners found on image
+                '''
+                I_1 = self.img[0]
+                I_2 = self.img[1]
+                no_board = 10
+                for i in xrange(0, len(img_pts_ref[no_board])):
+                    x = int(math.ceil(img_pts_ref[no_board][i, 0]))
+                    y = int(math.ceil(img_pts_ref[no_board][i, 1]))
+                    I_1[y-2:y+2, x-2:x+2] = [255, 0, 0]
+                cv2.imshow('left', I_1)
+                cv2.waitKey(0)
+                for i in xrange(0, len(img_pts_tar[no_board])):
+                    x = int(math.ceil(img_pts_tar[no_board][i, 0]))
+                    y = int(math.ceil(img_pts_tar[no_board][i, 1]))
+                    I_2[y-2:y+2, x-2:x+2] = [255, 0, 0]
+                cv2.imshow('right', I_2)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                '''
 
     # match target checkerboard against reference checkerboard
     def match_against_ref(self, boards_ref, corners_ref, boards_tar, corners_tar):
