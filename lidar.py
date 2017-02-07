@@ -32,7 +32,7 @@ class Lidar_Segment:
     def segment_data(self):
         self.comp_normal()
         self.find_board()
-        self.filter_board(30, 0.08, 0.018)
+        self.filter_board(len(self.lidar_pts) / 500, 0.08, 0.018)
 
     # compute the normal of each Lidar point by KNN and PCA
     def comp_normal(self):
