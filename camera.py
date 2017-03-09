@@ -161,42 +161,30 @@ class Camera_Calibration:
                     img_pts_ref.append(np.array(img_pts_board_ref).astype(np.float32))
                     obj_pts_tar.append(np.array(obj_pts_board_tar).astype(np.float32))
                     img_pts_tar.append(np.array(img_pts_board_tar).astype(np.float32))
-            '''
+
             # visualize the corners found on image
             for no_board in xrange(0, len(img_pts_ref)):
                 I_1 = self.img[0]
                 I_2 = self.img[1]
-                for i in xrange(0, 20):
+                for i in xrange(0, len(img_pts_ref[no_board])):
                     x = int(math.ceil(img_pts_ref[no_board][i, 0]))
                     y = int(math.ceil(img_pts_ref[no_board][i, 1]))
                     I_1[y-2:y+2, x-2:x+2] = [0, 0, 255]
                 cv2.imshow('left', I_1)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-                for i in xrange(0, 20):
+                for i in xrange(0, len(img_pts_tar[no_board])):
                     x = int(math.ceil(img_pts_tar[no_board][i, 0]))
                     y = int(math.ceil(img_pts_tar[no_board][i, 1]))
                     I_2[y-2:y+2, x-2:x+2] = [0, 0, 255]
                 cv2.imshow('right', I_2)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
-            '''
-
-            '''
-            # mono camera calibration
-            mono_ret, mono_mat_1, mono_dist_1, mono_r, mono_t = \
-                cv2.calibrateCamera(obj_pts_ref, img_pts_ref, (len(self.img[c][0]), len(self.img[c])),
-                                    flags=(cv2.CALIB_FIX_K3+cv2.CALIB_FIX_K4+cv2.CALIB_FIX_K5))
-
-            print "mono camera calibration result"
-            print mono_mat_1
-            print mono_dist_1
-            '''
 
             # stereo camera calibration
             ret, cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2, R, T, E, F = \
                 cv2.stereoCalibrate(obj_pts_ref, img_pts_ref, img_pts_tar, (len(self.img[c][0]), len(self.img[c])),
-                                    flags=(cv2.CALIB_FIX_K3+cv2.CALIB_FIX_K4+cv2.CALIB_FIX_K5))
+                                    flags=(cv2.CALIB_FIX_K4+cv2.CALIB_FIX_K5))
             rect_rot_1, rect_rot_2, cam_proj_1, cam_proj_2, Q, ROI1, ROI2 = \
                 cv2.stereoRectify(cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2,
                                   (len(self.img[c][0]), len(self.img[c])), R, T,
@@ -222,7 +210,7 @@ class Camera_Calibration:
                                                       img_pts_ref[b].astype(np.float32).T,
                                                       img_pts_tar[b].astype(np.float32).T)
                 obj_pts_board = obj_pts_board.T
-                obj_pts_board = obj_pts_board[:, 0: 3]/obj_pts_board[:, 3:]
+                obj_pts_board = obj_pts_board[:, 0: 3]/obj_pts_board[:, 3: 4]
                 self.boards_pts_set.append(obj_pts_board)
 
                 # visualize the corners found on image
