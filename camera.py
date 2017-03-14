@@ -162,6 +162,7 @@ class Camera_Calibration:
                     obj_pts_tar.append(np.array(obj_pts_board_tar).astype(np.float32))
                     img_pts_tar.append(np.array(img_pts_board_tar).astype(np.float32))
 
+            '''
             # visualize the corners found on image
             for no_board in xrange(0, len(img_pts_ref)):
                 I_1 = self.img[0]
@@ -180,6 +181,7 @@ class Camera_Calibration:
                 cv2.imshow('right', I_2)
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()
+            '''
 
             # stereo camera calibration
             ret, cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2, R, T, E, F = \

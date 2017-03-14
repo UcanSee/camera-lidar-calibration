@@ -32,7 +32,7 @@ class Lidar_Segment:
     def segment_data(self):
         self.comp_normal()
         self.find_board()
-        self.filter_board(len(self.lidar_pts) / 500, 0.08, 0.02)
+        self.filter_board(40, 0.1, 0.018)
 
     # compute the normal of each Lidar point by KNN and PCA
     def comp_normal(self):
@@ -84,6 +84,7 @@ class Lidar_Segment:
     #          max_ratio: maximum ratio of explained variance by third principle component
     #                     in order to remove non planar boards
     def filter_board(self, min_size, min_ratio, max_ratio):
+        print 'initial size: %d' % len(self.boards_set)
         # filter out planes with only a small number of points
         temp_boards_set = []
         for i in xrange(0, len(self.boards_set)):
