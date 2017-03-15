@@ -38,7 +38,7 @@ with open('camera_points.pickle') as f:
     camera_pts_set = pickle.load(f)
 with open('lidar_points.pickle') as f:
     lidar_pts_set = pickle.load(f)
-
+'''
 # visualize 3d points
 print "number of camera boards %d \n" % (len(camera_pts_set))
 print "number of lidar boards %d \n" % (len(lidar_pts_set))
@@ -67,3 +67,16 @@ plt.show()
 
 reg = Camera_Lidar_Reg(camera_pts_set, lidar_pts_set)
 reg.point_reg()
+with open('R_set.pickle', 'w') as f:
+    pickle.dump(reg.R_set, f)
+with open('t_set.pickle', 'w') as f:
+    pickle.dump(reg.t_set, f)
+'''
+
+with open('R_set.pickle') as f:
+    R = pickle.load(f)
+with open('t_set.pickle') as f:
+    t = pickle.load(f)
+
+reg = Camera_Lidar_Reg(camera_pts_set, lidar_pts_set, R_set=R, t_set=t)
+reg.point_reg_fine_only()
