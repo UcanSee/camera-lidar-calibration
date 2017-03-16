@@ -12,7 +12,7 @@ Implement range data segmentation into planes potentially corresponding to check
 
 class Lidar_Segment:
 
-    def __init__(self, lidar_pts, n_nbrs, tau_seg):
+    def __init__(self, lidar_pts, n_nbrs, tau_seg, min_size):
         # range data [[x, y, z]]
         self.lidar_pts = lidar_pts
         # number of neighbors used in finding normals and growing boards
@@ -27,12 +27,14 @@ class Lidar_Segment:
         self.boards_pts_set = []
         # threshold for segmentation check if two points are planar
         self.tau_seg = tau_seg
+        # minimize size threshold for a board
+        self.min_size = min_size
 
     # main function of range data segmentation
     def segment_data(self):
         self.comp_normal()
         self.find_board()
-        self.filter_board(40, 0.1, 0.018)
+        self.filter_board(self.min_size, 0.1, 0.05)
 
     # compute the normal of each Lidar point by KNN and PCA
     def comp_normal(self):

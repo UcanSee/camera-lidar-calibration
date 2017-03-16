@@ -187,6 +187,7 @@ def icp(a, b, init_pose=(0,0,0), no_iterations = 13):
         nbrs = NearestNeighbors(n_neighbors=1, algorithm='auto').fit(dst[0])
         distances, indices = nbrs.kneighbors(src[0])
 
+        print indices.shape
         #Compute the transformation between the current source
         #and destination cloudpoint
         #T = cv2.estimateRigidTransform(src, dst[0, indices.T], False) #this thing can return None for unknown reasons!!!

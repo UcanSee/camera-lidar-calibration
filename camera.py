@@ -183,6 +183,12 @@ class Camera_Calibration:
                 cv2.destroyAllWindows()
             '''
 
+            mono_ret, mono_mat_1, mono_dist_1, mono_r, mono_t = \
+                cv2.calibrateCamera(obj_pts_ref, img_pts_ref, (len(self.img[c][0]), len(self.img[c])), flags=(
+            cv2.CALIB_FIX_K3 + cv2.CALIB_FIX_K4 + cv2.CALIB_FIX_K5))
+
+            print 'mono', mono_mat_1, mono_dist_1
+
             # stereo camera calibration
             ret, cam_mat_1, cam_dist_1, cam_mat_2, cam_dist_2, R, T, E, F = \
                 cv2.stereoCalibrate(obj_pts_ref, img_pts_ref, img_pts_tar, (len(self.img[c][0]), len(self.img[c])),
@@ -192,6 +198,14 @@ class Camera_Calibration:
                                   (len(self.img[c][0]), len(self.img[c])), R, T,
                                   None, None, None, None, None, flags=(cv2.CALIB_ZERO_DISPARITY),
                                   alpha=0, newImageSize=(1091, 547))
+            # DEBUG
+            cam_mat_1 = np.array([[6.47816e2, 0.0, 7.71052e2], [0.0, 6.45650e2, 4.33588e2], [0.0, 0.0, 1.0]])
+            cam_mat_2 = np.array([[6.47793e2, 0.0, 7.49001e2], [0.0, 6.47026e2, 4.44525e2], [0.0, 0.0, 1.0]])
+            R = np.array([[9.99915e-01, -2.07121e-03, -1.28613e-02],
+                          [2.03651e-03, 9.99994e-01, -2.70997e-03],
+                          [1.28669e-02, 2.68355e-03, 9.9991e-01]])
+            T = np.array([[-6.311307521502e-01], [-3.756969942287e-03], [8.773418730107e-03]])
+
             self.intrinsic.append(cam_mat_1)
             self.intrinsic.append(cam_mat_2)
             self.distortion.append(cam_dist_1)
